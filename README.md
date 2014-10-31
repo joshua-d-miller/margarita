@@ -65,13 +65,19 @@ Once the requirements and installation are taken care of one may simply launch t
 
 This will launch a Flask web server hosting the project. Visit the web page at the listened address, by default the host's IP address on port 8089. To change those defaults:
 
-    python margarita.py -p 5000 -b 192.168.1.2 -d
+    python margarita.py -p 5000 -b 192.168.1.2 -d  <-- This will NOT work with this version (See Note)
 
 Which would listen on port 5000, bind to IP 192.168.1.2 (by default it listens on all interfaces and IP addresses), and enable debug mode.
 
 **Note:** Margarita must have permission to the reposado repository in order to effect any changes. This may mean you need to run margarita as a different user:
 
     sudo -u _www python margarita.py
+
+**Note:** I have modified the function at the end to incoroporate SSL so to run this version of Margarita you just need to modify this line: (Also changed the port so you can keep your original if you'd like)     
+
+    app.run('0.0.0.0', debug=True, port=4755, 
+        ssl_context=('YourCertFile.pem', 
+            'YourCertPrivateKey.key'))
 
 Automatic Startup
 -----------------
@@ -87,6 +93,27 @@ Margarita can be started automatically as part of launchd. Included is a launchd
 **Linux sysv startup**
 
 - [Linux/Mac – Have Margarita Startup Automatically On Boot](http://rileyshott.wordpress.com/2012/09/17/linuxmac-have-margarita-startup-automatically-on-boot/)
+
+Adding Flask-LDAP
+-----------------
+
+I have been able to use Flask-LDAP to require authentication to log into the Margarita Application.  I have commented out all the lines that would be needed to enable it.  Just uncomment these lines and enter your LDAP/AD information and which group you would like to authenticate (I like Domain Admins).  To use LDAP you will need to install the Flask-LDAP plugin which also requires the python-ldap plugin so run these two commands within your python environment:
+
+    pip install python-ldap
+    pip install Flask-LDAP
+
+LDAPS Note: In order to use LDAPS you must modify the __init.py__ of the Flask-LDAP plugin to either see a certificate or you can set an option to NOT require the certificate. Look for the function listed below.  I have highlighted the line you need.
+
+def connect(self):
+    print self.app.config['LDAP_HOST']
+    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, 0) <-- Add this line if using LDAPS
+    self.conn = ldap.initialize('{0}://{1}:{2}'.format(
+        self.app.config['LDAP_SCHEMA'],
+        self.app.config['LDAP_HOST'],
+        self.app.config['LDAP_PORT']))
+    return self.conn
+
+I'm sure there are better ways to do this such as creating a Flask login template however I just utilized the login prompt from the simple auth and tied it to the LDAP functions.
 
 Other web servers
 -----------------
