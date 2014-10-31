@@ -104,14 +104,14 @@ I have been able to use Flask-LDAP to require authentication to log into the Mar
 
 LDAPS Note: In order to use LDAPS you must modify the __init.py__ of the Flask-LDAP plugin to either see a certificate or you can set an option to NOT require the certificate. Look for the function listed below.  I have highlighted the line you need.
 
-def connect(self):
-    print self.app.config['LDAP_HOST']
-    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, 0) <-- Add this line if using LDAPS
-    self.conn = ldap.initialize('{0}://{1}:{2}'.format(
-        self.app.config['LDAP_SCHEMA'],
-        self.app.config['LDAP_HOST'],
-        self.app.config['LDAP_PORT']))
-    return self.conn
+    def connect(self):
+        print self.app.config['LDAP_HOST']
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, 0) <-- Add this line if using LDAPS
+        self.conn = ldap.initialize('{0}://{1}:{2}'.format(
+            self.app.config['LDAP_SCHEMA'],
+            self.app.config['LDAP_HOST'],
+            self.app.config['LDAP_PORT']))
+        return self.conn
 
 I'm sure there are better ways to do this such as creating a Flask login template however I just utilized the login prompt from the simple auth and tied it to the LDAP functions.
 
