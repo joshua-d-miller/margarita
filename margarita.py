@@ -11,8 +11,36 @@ except ImportError:
 	import simplejson as json
 import getopt
 from operator import itemgetter
+from distutils.version import LooseVersion
 
 from reposadolib import reposadocommon
+
+apple_catalog_version_map = {
+	'index-10.11-10.10-10.9-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.11',
+	'index-10.10-10.9-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.10',
+	'index-10.9-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.9',
+	'index-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.8',
+	'index-lion-snowleopard-leopard.merged-1.sucatalog': '10.7',
+	'index-leopard-snowleopard.merged-1.sucatalog': '10.6',
+	'index-leopard.merged-1.sucatalog': '10.5',
+	'index-1.sucatalog': '10.4',
+	'index.sucatalog': '10.4',
+}
+
+# cache the keys of the catalog version map dict
+apple_catalog_suffixes = apple_catalog_version_map.keys()
+
+def versions_from_catalogs(cats):
+	'''Given an iterable of catalogs return the corresponding OS X versions'''
+	versions = set()
+
+	for cat in cats:
+		# take the last portion of the catalog URL path
+		short_cat = cat.split('/')[-1]
+		if short_cat in apple_catalog_suffixes:
+			versions.add(apple_catalog_version_map[short_cat])
+
+	return versions
 
 def json_response(r):
 	'''Glue for wrapping raw JSON responses'''
@@ -27,12 +55,7 @@ def list_branches():
 	'''Returns catalog branch names and associated updates'''
 	catalog_branches = reposadocommon.getCatalogBranches()
 
-	# reorganize the updates into an array of branches
-	branches = []
-	for branch in catalog_branches.keys():
-		branches.append({'name': branch, 'products': catalog_branches[branch]})
-
-	return json_response(branches)
+	return json_response(catalog_branches.keys())
 
 def get_description_content(html):
 	if len(html) == 0:
@@ -69,26 +92,53 @@ def get_description_content(html):
 
 	return html[startloc:endloc]
 
+def product_urls(cat_entry):
+	'''Retreive package URLs for a given reposado product CatalogEntry.
+
+	Will rewrite URLs to be served from local reposado repo if necessary.'''
+
+	packages = cat_entry.get('Packages', [])
+
+	pkg_urls = []
+	for package in packages:
+		pkg_urls.append({
+			'url': reposadocommon.rewriteOneURL(package['URL']),
+			'size': package['Size'],
+			})
+
+	return pkg_urls
+
 @app.route('/products', methods=['GET'])
 def products():
 	products = reposadocommon.getProductInfo()
+	catalog_branches = reposadocommon.getCatalogBranches()
+
 	prodlist = []
 	for prodid in products.keys():
 		if 'title' in products[prodid] and 'version' in products[prodid] and 'PostDate' in products[prodid]:
-			prodlist.append({
+			prod = {
 				'title': products[prodid]['title'],
 				'version': products[prodid]['version'],
 				'PostDate': products[prodid]['PostDate'].strftime('%Y-%m-%d'),
 				'description': get_description_content(products[prodid]['description']),
 				'id': prodid,
 				'depr': len(products[prodid].get('AppleCatalogs', [])) < 1,
-				})
+				'branches': [],
+				'oscatalogs': sorted(versions_from_catalogs(products[prodid].get('OriginalAppleCatalogs')), key=LooseVersion, reverse=True),
+				'packages': product_urls(products[prodid]['CatalogEntry']),
+				}
+
+			for branch in catalog_branches.keys():
+				if prodid in catalog_branches[branch]:
+					prod['branches'].append(branch)
+
+			prodlist.append(prod)
 		else:
 			print 'Invalid update!'
 
 	sprodlist = sorted(prodlist, key=itemgetter('PostDate'), reverse=True)
 
-	return json_response(sprodlist)
+	return json_response({'products': sprodlist, 'branches': catalog_branches.keys()})
 
 @app.route('/new_branch/<branchname>', methods=['POST'])
 def new_branch(branchname):
