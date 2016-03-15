@@ -79,7 +79,7 @@
 	<div class="modal-body">
 		<p>
 			<% if (depr) { %>
-				<span class="label label-warning">Deprecated</span>
+				<span title="Deprecated update product" class="label label-warning">Deprecated</span>
 				<br>
 			<% } %>
 			<% _.each(oscatalogs, function(osver) { %>
@@ -90,6 +90,25 @@
 			<strong><span style="font-family:monospace"><%= id %></span></strong>
 			<br>
 			Post Date: <%= PostDate %>
+			<br>
+			Config-Data:
+			<% if (fetchingconfig == true) { %>
+				<em>Checking...</em>
+			<% } else { %>
+				<% if (configdata == true) { %>
+					<span class="label label-warning">Yes</span>
+					&mdash;
+					<button type="button" class="btn btn-mini btn-danger removeConfigDataAction">
+						<span class="icon-white icon-remove"></span>
+						Remove
+					</button>
+				<% } else if (configdata == false) { %>
+					<span class="label label-info">No</span>
+				<% } else { %>
+					<em>Unknown</em>
+				<% } %>
+			<% } %>
+			<br>
 			<br>
 			<% _.each(packages, function(pkg) { %>
 				<a class="btn btn-mini btn-success" href="<%= pkg.url %>">
@@ -174,7 +193,10 @@
 <script id="cell-product" type="text/html">
 	<a href="#" class="toggle-info" title="Product ID: <%= id %>"><%= title %></a>
 	<% if (depr) { %>
-		<span class="label label-warning">Deprecated</span>
+		<span title="Deprecated update product" class="label label-warning">D</span>
+	<% } %>
+	<% if (configdata) { %>
+		<span title="Product marked as config-data" class="label label-warning">C</span>
 	<% } %>
 	<% if (oscatalogs.length > 2) { %>
 		<span class="label label-info"><%= oscatalogs[0] %></span>
