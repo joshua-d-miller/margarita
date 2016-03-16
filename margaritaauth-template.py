@@ -26,6 +26,7 @@ except ImportError:
 
 app = Flask(__name__)
 # Uncomment and fill in the lines below with your AD/LDAP info
+# Uncomment and fill in the lines below with your AD/LDAP info
 # app.debug = True
 # ldap = LDAP(app)
 # app.config['LDAP_HOST'] = 'servername.com'
@@ -39,35 +40,49 @@ app = Flask(__name__)
 
 
 apple_catalog_version_map = {
+    # 10.11 (El Capitan)
     'index-10.11-10.10-10.9-mountainlion-lion-snowleopard'
     '-leopard.merged-1.sucatalog': '10.11',
+    # 10.10 (Yosemite)
     'index-10.10-10.9-mountainlion-lion-snowleopard'
     '-leopard.merged-1.sucatalog': '10.10',
+    # 10.9 (Mavericks)
     'index-10.9-mountainlion-lion-snowleopard'
     '-leopard.merged-1.sucatalog': '10.9',
+    # 10.8 (Mountain Lion)
     'index-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.8',
+    # 10.7 (Lion)
     'index-lion-snowleopard-leopard.merged-1.sucatalog': '10.7',
+    # 10.6 (Snow Leopard)
     'index-leopard-snowleopard.merged-1.sucatalog': '10.6',
+    # 10.5 (Leopard)
     'index-leopard.merged-1.sucatalog': '10.5',
+    # 10.4 (Tiger)
     'index-1.sucatalog': '10.4',
     'index.sucatalog': '10.4',
 }
+
 # Uncomment these lines when using LDAP Authentication as well
+
+
 # def authenticate():
     # '''The autnthenication procedure if the user is not authenticated'''
-    # return Response("Couldn't verify your credentials.  Please try again \
-    # or contact your Systems Administrator.", 401, {'WWW-Authenticate': \
-    # 'Basic realm="Login required"'})
+    # return Response("Couldn't verify your credentials.  Please try again"
+                    # " or contact your Systems "
+                    # "Administrator.", 401, {'WWW-Authenticate':
+                                            # 'Basic realm="Login required"'})
+
 
 # def login_required(f):
-    # '''The login_required function will prompt a user for authentication if enabled'''
+    # '''The login_required function will prompt
+    # a user for authentication if enabled'''
     # @wraps(f)
-        # def decorated(*args, **kwargs):
-            # auth = request.authorization
-            # if not auth or not ldap.ldap_login(auth.username, auth.password):
-                # return authenticate()
-                # return f(*args, **kwargs)
-            # return decorated
+    # def decorated(*args, **kwargs):
+        # auth = request.authorization
+        # if not auth or not ldap.ldap_login(auth.username, auth.password):
+            # return authenticate()
+        # return f(*args, **kwargs)
+    # return decorated
 
 # cache the keys of the catalog version map dict
 apple_catalog_suffixes = apple_catalog_version_map.keys()
@@ -83,7 +98,7 @@ def versions_from_catalogs(cats):
         if short_cat in apple_catalog_suffixes:
             versions.add(apple_catalog_version_map[short_cat])
 
-        return versions
+    return versions
 
 
 def json_response(r):
@@ -122,8 +137,8 @@ def get_description_content(html):
         celem = 'body'
         startloc = lwrhtml.find('<' + celem)
 
-    if startloc != -1:
-        startloc += 6  # length of <body>
+        if startloc != -1:
+            startloc += 6  # length of <body>
 
     if startloc == -1:
         # no <p> nor <body> tags. bail.
@@ -142,7 +157,6 @@ def get_description_content(html):
 
 def product_urls(cat_entry):
     '''Retreive package URLs for a given reposado product CatalogEntry.
-
     Will rewrite URLs to be served from local reposado repo if necessary.'''
 
     packages = cat_entry.get('Packages', [])
@@ -164,37 +178,37 @@ def products():
 
     prodlist = []
     for prodid in products.keys():
-        if 'title' in products[prodid] and \
-         'version' in products[prodid] and 'PostDate' in products[prodid]:
+        if 'title' in products[prodid] and 'version' in \
+         products[prodid] and 'PostDate' in products[prodid]:
             prod = {
              'title': products[prodid]['title'],
              'version': products[prodid]['version'],
              'PostDate': products[prodid]['PostDate'].strftime('%Y-%m-%d'),
-             'description': get_description_content
-             (products[prodid]['description']),
+             'description': get_description_content(
+                                                    products[prodid]
+                                                    ['description']),
              'id': prodid,
              'depr': len(products[prodid].get('AppleCatalogs', [])) < 1,
              'branches': [],
-             'oscatalogs':
-             sorted(versions_from_catalogs
-                    (products[prodid].get('OriginalAppleCatalogs')),
-                    key=LooseVersion, reverse=True),
+             'oscatalogs': sorted(versions_from_catalogs
+                                  (products[prodid].get(
+                                          'OriginalAppleCatalogs')),
+                                  key=LooseVersion, reverse=True),
              'packages': product_urls(products[prodid]['CatalogEntry']),
              }
 
-    for branch in catalog_branches.keys():
-        if prodid in catalog_branches[branch]:
-            prod['branches'].append(branch)
+            for branch in catalog_branches.keys():
+                if prodid in catalog_branches[branch]:
+                    prod['branches'].append(branch)
 
             prodlist.append(prod)
         else:
             print 'Invalid update!'
 
-            sprodlist = sorted(prodlist,
-                               key=itemgetter('PostDate'), reverse=True)
+    sprodlist = sorted(prodlist, key=itemgetter('PostDate'), reverse=True)
 
-            return json_response({'products': sprodlist,
-                                  'branches': catalog_branches.keys()})
+    return json_response({'products': sprodlist,
+                         'branches': catalog_branches.keys()})
 
 
 @app.route('/new_branch/<branchname>', methods=['POST'])
@@ -214,7 +228,7 @@ def new_branch(branchname):
 # @login_required
 def delete_branch(branchname):
     catalog_branches = reposadocommon.getCatalogBranches()
-    if not branchname in catalog_branches:
+    if branchname not in catalog_branches:
         reposadocommon.print_stderr('Branch %s does not exist!', branchname)
         return
 
@@ -276,11 +290,11 @@ def process_queue():
                 print 'Adding product %s to branch %s' % (prodId, branch, )
                 catalog_branches[branch].append(prodId)
 
-            print 'Writing catalogs'
-            reposadocommon.writeCatalogBranches(catalog_branches)
-            reposadocommon.writeAllBranchCatalogs()
+    print 'Writing catalogs'
+    reposadocommon.writeCatalogBranches(catalog_branches)
+    reposadocommon.writeAllBranchCatalogs()
 
-            return jsonify(result=True)
+    return jsonify(result=True)
 
 
 @app.route('/dup_apple/<branchname>', methods=['POST'])
@@ -292,20 +306,20 @@ def dup_apple(branchname):
         print 'No branch ' + branchname
         return jsonify(result=False)
 
-        # generate list of (non-deprecated) updates
-        products = reposadocommon.getProductInfo()
-        prodlist = []
-        for prodid in products.keys():
-            if len(products[prodid].get('AppleCatalogs', [])) >= 1:
-                prodlist.append(prodid)
+    # generate list of (non-deprecated) updates
+    products = reposadocommon.getProductInfo()
+    prodlist = []
+    for prodid in products.keys():
+        if len(products[prodid].get('AppleCatalogs', [])) >= 1:
+            prodlist.append(prodid)
 
-        catalog_branches[branchname] = prodlist
+    catalog_branches[branchname] = prodlist
 
-        print 'Writing catalogs'
-        reposadocommon.writeCatalogBranches(catalog_branches)
-        reposadocommon.writeAllBranchCatalogs()
+    print 'Writing catalogs'
+    reposadocommon.writeCatalogBranches(catalog_branches)
+    reposadocommon.writeAllBranchCatalogs()
 
-        return jsonify(result=True)
+    return jsonify(result=True)
 
 
 @app.route('/dup/<frombranch>/<tobranch>', methods=['POST'])
@@ -318,13 +332,13 @@ def dup(frombranch, tobranch):
         print 'No branch ' + branchname
         return jsonify(result=False)
 
-        catalog_branches[tobranch] = catalog_branches[frombranch]
+    catalog_branches[tobranch] = catalog_branches[frombranch]
 
-        print 'Writing catalogs'
-        reposadocommon.writeCatalogBranches(catalog_branches)
-        reposadocommon.writeAllBranchCatalogs()
+    print 'Writing catalogs'
+    reposadocommon.writeCatalogBranches(catalog_branches)
+    reposadocommon.writeAllBranchCatalogs()
 
-        return jsonify(result=True)
+    return jsonify(result=True)
 
 
 @app.route('/config_data', methods=['POST'])
@@ -333,20 +347,20 @@ def config_data():
     check_prods = request.json
 
     if len(check_prods) > 0:
-        cd_prods = \
-         reposadocommon.check_or_remove_config_data_attribute(check_prods)
+        cd_prods = reposadocommon.check_or_remove_config_data_attribute(
+                                                                check_prods)
     else:
         cd_prods = []
 
-        response_prods = {}
-        for prod_id in check_prods:
-            response_prods.update(
-                                  {prod_id: True if prod_id in
-                                   cd_prods else False})
+    response_prods = {}
+    for prod_id in check_prods:
+        response_prods.update(
+                              {prod_id: True if prod_id in cd_prods else False
+                               })
 
-            print response_prods
+    print response_prods
 
-            return json_response(response_prods)
+    return json_response(response_prods)
 
 
 @app.route('/remove_config_data/<product>', methods=['POST'])
@@ -354,29 +368,14 @@ def remove_config_data(product):
     # catalog_branches = reposadocommon.getCatalogBranches()
     check_prods = request.json
 
-    products = reposadocommon.check_or_remove_config_data_attribute([product, ], remove_attr=True)
+    products = reposadocommon.check_or_remove_config_data_attribute(
+                                                            [product, ],
+                                                            remove_attr=True
+                                                            )
 
     return json_response(products)
 
-
-def main():
-    optlist, args = getopt.getopt(sys.argv[1:], 'db:p:')
-
-    flaskargs = {}
-    flaskargs['host'] = '0.0.0.0'
-    flaskargs['port'] = 8089
-    flaskargs['threaded'] = True
-
-    for o, a in optlist:
-        if o == '-d':
-            flaskargs['debug'] = True
-        elif o == '-b':
-            flaskargs['host'] = a
-        elif o == '-p':
-            flaskargs['port'] = int(a)
-
-        app.run(**flaskargs)
-
 if __name__ == '__main__':
     app.run('0.0.0.0', debug=True, port=4755,
-            ssl_context=('YourCertFile', 'YourCertKeyFile'))
+            ssl_context=('YourCertPEM',
+                         'YourCertKey'))
