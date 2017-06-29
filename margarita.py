@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from flask import Flask
 from flask import jsonify, render_template, redirect
 from flask import request, Response
@@ -16,6 +17,7 @@ from distutils.version import LooseVersion
 from reposadolib import reposadocommon
 
 apple_catalog_version_map = {
+	'index-10.12-10.11-10.10-10.9-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.12',
 	'index-10.11-10.10-10.9-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.11',
 	'index-10.10-10.9-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.10',
 	'index-10.9-mountainlion-lion-snowleopard-leopard.merged-1.sucatalog': '10.9',
@@ -264,7 +266,7 @@ def config_data():
 	check_prods = request.json
 
 	if len(check_prods) > 0:
-		cd_prods = reposadocommon.check_or_remove_config_data_attribute(check_prods)
+		cd_prods = reposadocommon.check_or_remove_config_data_attribute(check_prods, suppress_output=True)
 	else:
 		cd_prods = []
 
@@ -281,7 +283,7 @@ def remove_config_data(product):
 	# catalog_branches = reposadocommon.getCatalogBranches()
 	check_prods = request.json
 
-	products = reposadocommon.check_or_remove_config_data_attribute([product, ], remove_attr=True)
+	products = reposadocommon.check_or_remove_config_data_attribute([product, ], remove_attr=True, suppress_output=True)
 
 	return json_response(products)
 
