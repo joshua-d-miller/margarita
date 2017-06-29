@@ -5,19 +5,21 @@ have support for LDAP/AD authentication.  Original code by
 Jesse Peterson https://github.com/jessepeterson/margarita.
 Support for LDAP/AD and PyLinting by Joshua D. Miller
 https://github.com/joshua-d-miller/margarita - josh@psu.edu
-Last Updated March 15, 2016'''
+Last Updated Jun 29, 2017'''
+
 import getopt
 import os
 import sys
+
+from distutils.version import LooseVersion
 from flask import Flask
 from flask import jsonify, render_template, redirect
 from flask import request, Response
+from flask.ext.ldap import LDAP
+from functools import wraps
 from operator import itemgetter
-from distutils.version import LooseVersion
 from reposadolib import reposadocommon
-# Uncomment the following lines to use LDAP
-# from functools import wraps
-# from flask.ext.ldap import LDAP
+
 try:
     import json
 except ImportError:
@@ -25,7 +27,6 @@ except ImportError:
     import simplejson as json
 
 app = Flask(__name__)
-# Uncomment and fill in the lines below with your AD/LDAP info
 # Uncomment and fill in the lines below with your AD/LDAP info
 # app.debug = True
 # ldap = LDAP(app)
@@ -40,6 +41,9 @@ app = Flask(__name__)
 
 
 apple_catalog_version_map = {
+    # 10.12 (Sierra)
+    'index-10.12-10.11-10.10-10.9-mountainlion-lion-snowleopard'
+    '-leopard.merged-1.sucatalog': '10.12',
     # 10.11 (El Capitan)
     'index-10.11-10.10-10.9-mountainlion-lion-snowleopard'
     '-leopard.merged-1.sucatalog': '10.11',
@@ -63,8 +67,6 @@ apple_catalog_version_map = {
 }
 
 # Uncomment these lines when using LDAP Authentication as well
-
-
 # def authenticate():
     # '''The autnthenication procedure if the user is not authenticated'''
     # return Response("Couldn't verify your credentials.  Please try again"
@@ -152,11 +154,13 @@ def get_description_content(html):
         # if the element is a body tag, then don't include it.
         # DOM parsing will just ignore it anyway
         endloc += len(celem) + 3
+
     return html[startloc:endloc]
 
 
 def product_urls(cat_entry):
     '''Retreive package URLs for a given reposado product CatalogEntry.
+
     Will rewrite URLs to be served from local reposado repo if necessary.'''
 
     packages = cat_entry.get('Packages', [])
@@ -164,9 +168,8 @@ def product_urls(cat_entry):
     pkg_urls = []
     for package in packages:
         pkg_urls.append({
-                        'url': reposadocommon.rewriteOneURL(package['URL']),
-                        'size': package['Size'],
-                        })
+            'url': reposadocommon.rewriteOneURL(package['URL']),
+            'size': package['Size'], })
 
     return pkg_urls
 
@@ -178,24 +181,22 @@ def products():
 
     prodlist = []
     for prodid in products.keys():
-        if 'title' in products[prodid] and 'version' in \
-         products[prodid] and 'PostDate' in products[prodid]:
+        if 'title' in products[prodid] and 'version' in products[prodid] \
+           and 'PostDate' in products[prodid]:
             prod = {
-             'title': products[prodid]['title'],
-             'version': products[prodid]['version'],
-             'PostDate': products[prodid]['PostDate'].strftime('%Y-%m-%d'),
-             'description': get_description_content(
-                                                    products[prodid]
-                                                    ['description']),
-             'id': prodid,
-             'depr': len(products[prodid].get('AppleCatalogs', [])) < 1,
-             'branches': [],
-             'oscatalogs': sorted(versions_from_catalogs
-                                  (products[prodid].get(
-                                          'OriginalAppleCatalogs')),
-                                  key=LooseVersion, reverse=True),
-             'packages': product_urls(products[prodid]['CatalogEntry']),
-             }
+                'title': products[prodid]['title'],
+                'version': products[prodid]['version'],
+                'PostDate': products[prodid]['PostDate'].strftime('%Y-%m-%d'),
+                'description': get_description_content(
+                    products[prodid]['description']),
+                'id': prodid,
+                'depr': len(products[prodid].get('AppleCatalogs', [])) < 1,
+                'branches': [],
+                'oscatalogs': sorted(
+                    versions_from_catalogs(products[prodid].get(
+                        'OriginalAppleCatalogs')),
+                    key=LooseVersion, reverse=True),
+                'packages': product_urls(products[prodid]['CatalogEntry']), }
 
             for branch in catalog_branches.keys():
                 if prodid in catalog_branches[branch]:
@@ -207,8 +208,8 @@ def products():
 
     sprodlist = sorted(prodlist, key=itemgetter('PostDate'), reverse=True)
 
-    return json_response({'products': sprodlist,
-                         'branches': catalog_branches.keys()})
+    return json_response({
+        'products': sprodlist, 'branches': catalog_branches.keys()})
 
 
 @app.route('/new_branch/<branchname>', methods=['POST'])
@@ -228,7 +229,7 @@ def new_branch(branchname):
 # @login_required
 def delete_branch(branchname):
     catalog_branches = reposadocommon.getCatalogBranches()
-    if branchname not in catalog_branches:
+    if not branchname in catalog_branches:
         reposadocommon.print_stderr('Branch %s does not exist!', branchname)
         return
 
@@ -327,8 +328,8 @@ def dup_apple(branchname):
 def dup(frombranch, tobranch):
     catalog_branches = reposadocommon.getCatalogBranches()
 
-    if frombranch not in catalog_branches.keys() \
-       or tobranch not in catalog_branches.keys():
+    if frombranch not in catalog_branches.keys() or \
+       tobranch not in catalog_branches.keys():
         print 'No branch ' + branchname
         return jsonify(result=False)
 
@@ -348,15 +349,14 @@ def config_data():
 
     if len(check_prods) > 0:
         cd_prods = reposadocommon.check_or_remove_config_data_attribute(
-                                                                check_prods)
+            check_prods, suppress_output=True)
     else:
         cd_prods = []
 
     response_prods = {}
     for prod_id in check_prods:
         response_prods.update(
-                              {prod_id: True if prod_id in cd_prods else False
-                               })
+            {prod_id: True if prod_id in cd_prods else False})
 
     print response_prods
 
@@ -369,11 +369,10 @@ def remove_config_data(product):
     check_prods = request.json
 
     products = reposadocommon.check_or_remove_config_data_attribute(
-                                                            [product, ],
-                                                            remove_attr=True
-                                                            )
+        [product, ], remove_attr=True, suppress_output=True)
 
     return json_response(products)
+
 
 if __name__ == '__main__':
     app.run('0.0.0.0', debug=True, port=4755,
