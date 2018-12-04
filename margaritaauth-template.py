@@ -44,7 +44,7 @@ apple_catalog_version_map = {
     # 10.14 (Snow Leopard)
     'index-10.14-10.13-10.12-10.11-10.10-10.9-mountainlion-lion'
     '-snowleopard-leopard.merged-1.sucatalog': '10.14',
-    # 10.13 (High Sierra0)
+    # 10.13 (High Sierra)
     'index-10.13-10.12-10.11-10.10-10.9-mountainlion-lion-snowleopard'
     '-leopard.merged-1.sucatalog': '10.13',
     # 10.12 (Sierra)
