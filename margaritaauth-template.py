@@ -20,6 +20,7 @@ from flask import jsonify, render_template, redirect
 from flask import request, Response
 from operator import itemgetter
 from reposadolib import reposadocommon
+from urllib.parse import urlparse
 
 try:
     import json
