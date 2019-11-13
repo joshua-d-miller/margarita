@@ -1,32 +1,34 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 '''This python script will launch Jesse Peterson's margarita
 web interface for Reposado.  This modified version however will
 have support for LDAP/AD authentication.  Original code by
 Jesse Peterson https://github.com/jessepeterson/margarita.
 Support for LDAP/AD and PyLinting by Joshua D. Miller
 https://github.com/joshua-d-miller/margarita - josh@psu.edu
-Last Updated Jun 29, 2017'''
+Last Updated Nov 13, 2019'''
+
+from __future__ import print_function
+from __future__ import absolute_import
+from distutils.version import LooseVersion
 
 import getopt
 import os
 import sys
 
-from distutils.version import LooseVersion
 from flask import Flask
 from flask import jsonify, render_template, redirect
 from flask import request, Response
-from flask.ext.ldap import LDAP
-from functools import wraps
 from operator import itemgetter
 from reposadolib import reposadocommon
 
 try:
     import json
 except ImportError:
-    # couldn't find json, try simplejson library
+	# couldn't find json, try simplejson library
     import simplejson as json
 
 app = Flask(__name__)
+
 # Uncomment and fill in the lines below with your AD/LDAP info
 # app.debug = True
 # ldap = LDAP(app)
@@ -41,7 +43,10 @@ app = Flask(__name__)
 
 
 apple_catalog_version_map = {
-    # 10.14 (Snow Leopard)
+    # 10.15 (Catalina)
+    'index-10.15-10.14-10.13-10.12-10.11-10.10-10.9-mountainlion-lion'
+    '-snowleopard-leopard.merged-1.sucatalog': '10.15',
+    # 10.14 (Mojave)
     'index-10.14-10.13-10.12-10.11-10.10-10.9-mountainlion-lion'
     '-snowleopard-leopard.merged-1.sucatalog': '10.14',
     # 10.13 (High Sierra)
@@ -210,7 +215,7 @@ def products():
 
             prodlist.append(prod)
         else:
-            print 'Invalid update!'
+            print('Invalid update!')
 
     sprodlist = sorted(prodlist, key=itemgetter('PostDate'), reverse=True)
 
@@ -283,21 +288,21 @@ def process_queue():
         branch = change['branch']
 
         if branch not in catalog_branches.keys():
-            print 'No such catalog'
+            print('No such catalog')
             continue
 
         if change['listed']:
             # if this change /was/ listed, then unlist it
             if prodId in catalog_branches[branch]:
-                print 'Removing product %s from branch %s' % (prodId, branch, )
+                print('Removing product %s from branch %s' % (prodId, branch, ))
                 catalog_branches[branch].remove(prodId)
         else:
             # if this change /was not/ listed, then list it
             if prodId not in catalog_branches[branch]:
-                print 'Adding product %s to branch %s' % (prodId, branch, )
+                print('Adding product %s to branch %s' % (prodId, branch, ))
                 catalog_branches[branch].append(prodId)
 
-    print 'Writing catalogs'
+    print('Writing catalogs')
     reposadocommon.writeCatalogBranches(catalog_branches)
     reposadocommon.writeAllBranchCatalogs()
 
@@ -310,7 +315,7 @@ def dup_apple(branchname):
     catalog_branches = reposadocommon.getCatalogBranches()
 
     if branchname not in catalog_branches.keys():
-        print 'No branch ' + branchname
+        print('No branch {0:}').format(branchname)
         return jsonify(result=False)
 
     # generate list of (non-deprecated) updates
@@ -322,7 +327,7 @@ def dup_apple(branchname):
 
     catalog_branches[branchname] = prodlist
 
-    print 'Writing catalogs'
+    print('Writing catalogs')
     reposadocommon.writeCatalogBranches(catalog_branches)
     reposadocommon.writeAllBranchCatalogs()
 
@@ -336,12 +341,12 @@ def dup(frombranch, tobranch):
 
     if frombranch not in catalog_branches.keys() or \
        tobranch not in catalog_branches.keys():
-        print 'No branch ' + branchname
+        # print('No branch {0:}').format(branchname)
         return jsonify(result=False)
 
     catalog_branches[tobranch] = catalog_branches[frombranch]
 
-    print 'Writing catalogs'
+    print('Writing catalogs')
     reposadocommon.writeCatalogBranches(catalog_branches)
     reposadocommon.writeAllBranchCatalogs()
 
@@ -364,7 +369,7 @@ def config_data():
         response_prods.update(
             {prod_id: True if prod_id in cd_prods else False})
 
-    print response_prods
+    print(response_prods)
 
     return json_response(response_prods)
 
