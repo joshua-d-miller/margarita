@@ -209,7 +209,7 @@ def index():
             attributes = session['samlUserdata'].items()
 
     return render_template(
-        'margarita.html',
+        'index.html',
         errors=errors,
         error_reason=error_reason,
         not_auth_warn=not_auth_warn,
