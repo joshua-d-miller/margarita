@@ -34,6 +34,13 @@ Or
 
 If you prefer to install into a Python [virtualenv](http://www.virtualenv.org/) that works as well.
 
+**Python 3 SAML**
+
+This margarita install uses python3-saml so you will need to create a saml folder in your margarita folder. From there you will need to contact your IDP and build the files *settings.json* and *advanced_settings.json*. You can also use a *certs* folder if you'd like or you can put the certificate itself in the *settings.json* file. See below for examples:
+
+    [settings.json](https://github.com/onelogin/python3-saml/blob/master/demo-flask/saml/settings.json)
+    [advanced_settings.json](https://github.com/onelogin/python3-saml/blob/master/demo-flask/saml/advanced_settings.json)
+
 Installation (Tested on CentOS 8)
 ---------------------------------
 
