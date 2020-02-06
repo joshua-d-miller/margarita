@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset="utf-8">
-	<title>Margarita</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 	<link href="static/css/bootstrap.min.css" rel="stylesheet">
 	<style>
@@ -45,10 +44,45 @@
 
 	<script src="static/js/json2.js"></script>
 	<script src="static/js/jquery.min.js"></script>
-</head>
-<body>
+    <title>Margarita</title>
+  </head>
+  <body>
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </body>
+</html>
+[root@E7-Tesla margarita]# vi templates/index.html
+[root@E7-Tesla margarita]# cat templates/index.html
+{% extends "base.html" %}
 
-<!-- Layouts, Regions, and Views -->
+{% block content %}
+
+{% if errors %}
+  <div class="alert alert-danger" role="alert">
+    <strong>Errors:</strong>
+    <ul class="list-unstyled">
+        {% for err in errors %}
+          <li>{{err}}</li>
+        {% endfor %}
+    </ul>
+    {% if error_reason %}
+        <span>{{error_reason}}</span>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if not_auth_warn %}
+  <div class="alert alert-danger" role="alert">Not authenticated</div>
+{% endif %}
+
+{% if success_slo %}
+  <div class="alert alert-success" role="alert">Successfully logged out</div>
+{% endif %}
+
+{% if paint_logout %}
+  {% if attributes %}
+    <!-- Layouts, Regions, and Views -->
 
 <div id="navbarRegion"></div>
 
@@ -274,7 +308,6 @@
 	</td>
 </tr>
 </script>
-
 <!-- Includes -->
 
 	<script src="static/js/underscore-min.js"></script>
@@ -287,5 +320,13 @@
 	<script src="static/js/backgrid-paginator.min.js"></script>
 	<script src="static/js/margarita.js"></script>
 	<script src="static/js/bootstrap.min.js"></script>
-</body>
-</html>
+  {% else %}
+    <div class="alert alert-danger" role="alert">You don't have any attributes</div>
+  {% endif %}
+  <a href="?slo" class="btn btn-danger">Logout</a>
+{% else %}
+  <h1>Margarita - Manage Apple Updates from <a href="https://github.com/wdas/reposado">Reposado</a><br />
+  <a href="?sso" class="btn btn-primary">Login</a>
+{% endif %}
+
+{% endblock %}

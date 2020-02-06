@@ -1,2 +1,5 @@
 preferences.plist
 reposadolib
+saml
+.DS_Store
+secret_key.py
