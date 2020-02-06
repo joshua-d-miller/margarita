@@ -9,7 +9,7 @@ This fork of margarita now has SAML authentication using the [python3-saml](http
 
 I have also performed some minor updates to the CSS of this project to give it a hopefully cleaner look. You can always remove the CSS if you'd like.
 
-![Screenshot](static/MargaritaInterface.png)
+![Screenshot](https://github.com/joshua-d-miller/margarita/blob/master/static/Margarita%20Interface.png)
 
 Requirements
 ------------
