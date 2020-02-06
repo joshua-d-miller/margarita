@@ -85,6 +85,8 @@ To create a service on linux you can basically copy paste this and modify it to 
     [Install]
     WantedBy=multi-user.target
 
+This can be created in */etc/systemd/system* as **margarita.service**. Once created you can then start it by running *systemctl start magarita*.
+
 **Note:** Margarita must have permission to the reposado repository in order to effect any changes. This may mean you need to run margarita as a different user:
 
     sudo -u _www python margarita.py
